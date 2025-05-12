@@ -3,6 +3,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const validator = require("validator");
+const mongoose = require('mongoose'); // <-- Add this line
+
+
 const register = async (req, res) => {
   const { email, password, userName, userImage } = req.body;
 
@@ -40,34 +43,6 @@ const register = async (req, res) => {
   }
 };
 
-// const register = async (req, res) => {
-//   var salt = bcrypt.genSaltSync(10);
-//   var hash = bcrypt.hashSync(req.body.password, salt);
-//   const email = req.body.email;
-
-//   if (!validator.isEmail(email)) {
-//     return res.status(400).json({ error: "Invalid email address" });
-//   }
-//   const adduser = new auth({
-//     email: req.body.email,
-//     password: hash,
-//     userName: req.body.userName,
-//     userImage: req.body.userImage,
-   
-//   });
-
-//   try {
-//     const emailexist = await auth.findOne({ email });
-
-//     if (emailexist) {
-//       return res.status(401).json({msg:"email already exist"});
-//     }
-//     const saveduser = await adduser.save();
-//     res.status(201).json(saveduser);
-//   } catch (error) {
-//     res.status(400).json(error);
-//   }
-// };
 
 const login = async (req, res) => {
   try {
@@ -135,5 +110,50 @@ const verifyToken = (req, res, next) => {
   };
 
 
+const getUserById = async (req, res) => {
+  try {
+    const userId = req.params.id;
 
-module.exports = { login, register, verifyToken,getUserByToken };
+    // Validate MongoDB ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid user ID format." });
+    }
+
+    const user = await auth.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+ const updateUserProfile = async (req, res) => {
+  const userId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID format.' });
+  }
+
+  try {
+    const updatedUser = await auth.findByIdAndUpdate(
+      userId,
+      { $set: req.body },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    res.status(200).json(updatedUser);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+module.exports = { login, register, verifyToken,getUserByToken,getUserById,updateUserProfile };
