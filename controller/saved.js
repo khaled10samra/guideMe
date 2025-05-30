@@ -11,6 +11,7 @@ const saveMuseum = async (req, res) => {
 
     const saved = new SavedMuseum({ User, Museum });
     const result = await saved.save();
+    
 
     res.status(201).json(result);
   } catch (error) {
